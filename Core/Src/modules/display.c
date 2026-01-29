@@ -21,6 +21,10 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "math.h"
+#include "speed_sensor.h"
+#include "controls.h"
+#include "eeprom.h"
+#include "i2c_master.h"
 
 /* Time, Date, Temp Variables */
 int arrayTimePos[50];
@@ -48,6 +52,9 @@ int displayFlag = 0;
 int timeCount = 0;
 
 int menuScreen = 0;
+
+int trigger = 0;
+int mileCounter = 0;
 
 int state = MENUSTATE;
 
@@ -325,5 +332,411 @@ void blinkMenu(void)
 	if (count == 3)
 	{
 		displayMenu();
+	}
+}
+
+void TIM7_Init(void)
+{
+	RCC->APB1ENR |= 1 << 5;
+	TIM7->CR1 &= ~0b1;
+
+	TIM7->DIER |= 1U;
+
+	TIM7->CNT = 0;
+	TIM7->PSC = 16000 - 1;
+	TIM7->ARR = 250 - 1;
+
+	TIM7->CR1 |= 0b1;
+
+	NVIC_EnableIRQ(TIM7_IRQn);
+}
+
+void TIM7_IRQHandler(void)
+{
+	/* DISPLAY */
+	blink++;
+	if (blink > 2)
+		blink = 0;
+
+	/* Update time */
+	trigger = 1;
+
+	/* bluetooth */
+	if (bluetoothFlag)
+	{
+		displayBluetooth(0);
+
+		bluetoothCounter++;
+		if (bluetoothCounter == 4)
+		{
+			displayBluetooth(1);
+			bluetoothCounter = 0;
+			bluetoothFlag = 0;
+		}
+	}
+
+	mileCounter++;
+	/* Motor */
+	if (mileCounter == 2)
+	{
+		sendMiles();
+	}
+
+	if (mileCounter == 4)
+	{
+		/* write to EEPROM */
+		updateCumulativeMiles();
+		if (cumulativeMiles > 1)
+		{
+			storeMiles();
+
+			I2C1_byteWrite(slave, 0, 0x11);
+			// I2C1_byteWrite(slave, 0, 0x11);
+			cumulativeMiles = 0;
+		}
+		mileCounter = 0;
+	}
+
+	TIM7->SR &= ~0b1;
+}
+
+/*
+ * @brief Function that changes the date on the RTC.
+ * @param None
+ * @return None
+ */
+void changeDate(void)
+{
+	char msg[50];
+	int offsetX = 0;
+	decimalBinary();
+
+	/* change hour */
+	switch (changeDateCount)
+	{
+
+	case 0:
+		/* wait for something */
+		break;
+
+		/* HOUR */
+	case 1:
+
+		sprintf(msg, "%d%d", monthArray[0], monthArray[1]);
+
+		if (blink == 1)
+		{
+			for (int i = 0; i < strlen(msg); i++)
+			{
+				DrawCharS(40 + offsetX, (320 / 2), msg[i], WHITE, BLACK, 3);
+				offsetX = offsetX + 20;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < strlen(msg); i++)
+			{
+				DrawCharS(40 + offsetX, (320 / 2), msg[i], BLACK, BLACK, 3);
+				offsetX = offsetX + 20;
+			}
+		}
+
+		break;
+
+	case 2:
+		printDateToLCD(0);
+		sprintf(msg, "%d%d", dateArray[0], dateArray[1]);
+
+		if (blink == 1)
+		{
+			for (int i = 0; i < strlen(msg); i++)
+			{
+				DrawCharS(100 + offsetX, (320 / 2), msg[i], WHITE, BLACK, 3);
+				offsetX = offsetX + 20;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < strlen(msg); i++)
+			{
+				DrawCharS(100 + offsetX, (320 / 2), msg[i], BLACK, BLACK, 3);
+				offsetX = offsetX + 20;
+			}
+		}
+
+		break;
+
+	case 3:
+		printDateToLCD(1);
+		sprintf(msg, "%d%d", yearArray[0], yearArray[1]);
+
+		if (blink == 1)
+		{
+			for (int i = 0; i < strlen(msg); i++)
+			{
+				DrawCharS(160 + offsetX, (320 / 2), msg[i], WHITE, BLACK, 3);
+				offsetX = offsetX + 20;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < strlen(msg); i++)
+			{
+				DrawCharS(160 + offsetX, (320 / 2), msg[i], BLACK, BLACK, 3);
+				offsetX = offsetX + 20;
+			}
+		}
+		break;
+
+	case 4:
+		printDateToLCD(2);
+
+		/* Send I2C message */
+		sendChangeDate();
+		changeDateCount = 0;
+		changeDateFlag = 0;
+
+		break;
+	}
+}
+
+/*
+ * @brief Function that prints the date to the LCD.
+ * @param date The date to print (0 = month, 1 = day, 2 = year).
+ * @return None
+ */
+void printDateToLCD(int date)
+{
+	char msg[50];
+	int offsetX = 0;
+
+	switch (date)
+	{
+	case 0:
+		sprintf(msg, "%d%d", monthArray[0], monthArray[1]);
+		for (int i = 0; i < strlen(msg); i++)
+		{
+			DrawCharS(40 + offsetX, 320 / 2, msg[i], WHITE, BLACK, 3);
+			offsetX = offsetX + 20;
+		}
+
+		break;
+
+	case 1:
+		sprintf(msg, "%d%d", dateArray[0], dateArray[1]);
+		for (int i = 0; i < strlen(msg); i++)
+		{
+			DrawCharS(100 + offsetX, 320 / 2, msg[i], WHITE, BLACK, 3);
+			offsetX = offsetX + 20;
+		}
+
+		break;
+
+	case 2:
+		sprintf(msg, "%d%d", yearArray[0], yearArray[1]);
+
+		for (int i = 0; i < strlen(msg); i++)
+		{
+			DrawCharS(160 + offsetX, 320 / 2, msg[i], WHITE, BLACK, 3);
+			offsetX = offsetX + 20;
+		}
+		break;
+	}
+}
+
+/*
+ * @brief Function that sends the changed date to the RTC.
+ * @param None
+ * @return None
+ */
+void sendChangeDate(void)
+{
+
+	char msgMonth = (monthArray[0] << 4) | monthArray[1];
+	char msgDate = (dateArray[0] << 4) | dateArray[1];
+	char msgYear = (yearArray[0] << 4) | yearArray[1];
+
+	I2C1_byteWrite(rtcAddress, monthM, msgMonth);
+	I2C1_byteWrite(rtcAddress, dateM, msgDate);
+	I2C1_byteWrite(rtcAddress, yearM, msgYear);
+}
+
+/*
+ * @brief Function that changes the time on the RTC.
+ * @param None
+ * @return None
+ */
+void changeTime(void)
+{
+	char msg[50];
+	int offsetX = 0;
+	decimalBinary();
+
+	/* change hour */
+	switch (changeTimeCount)
+	{
+
+	case 0:
+		/* wait for something */
+		break;
+
+		/* HOUR */
+	case 1:
+
+		sprintf(msg, "%d%d", hourArray[0], hourArray[1]);
+
+		if (blink == 1)
+		{
+			for (int i = 0; i < strlen(msg); i++)
+			{
+				DrawCharS(50 + offsetX, 320 / 2, msg[i], WHITE, BLACK, 3);
+				offsetX = offsetX + 20;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < strlen(msg); i++)
+			{
+				DrawCharS(50 + offsetX, 320 / 2, msg[i], BLACK, BLACK, 3);
+				offsetX = offsetX + 20;
+			}
+		}
+
+		break;
+
+	case 2:
+		printTimeToLCD(0);
+		sprintf(msg, "%d%d", minArray[0], minArray[1]);
+
+		if (blink == 1)
+		{
+			for (int i = 0; i < strlen(msg); i++)
+			{
+				DrawCharS(110 + offsetX, 320 / 2, msg[i], WHITE, BLACK, 3);
+				offsetX = offsetX + 20;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < strlen(msg); i++)
+			{
+				DrawCharS(110 + offsetX, 320 / 2, msg[i], BLACK, BLACK, 3);
+				offsetX = offsetX + 20;
+			}
+		}
+
+		break;
+
+	case 3:
+		printTimeToLCD(1);
+
+		if (ampmFlag == 1)
+		{
+			sprintf(msg, "PM");
+		}
+		else
+			sprintf(msg, "AM");
+
+		if (blink == 1)
+		{
+			for (int i = 0; i < strlen(msg); i++)
+			{
+				DrawCharS(170 + offsetX, 320 / 2, msg[i], WHITE, BLACK, 3);
+				offsetX = offsetX + 20;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < strlen(msg); i++)
+			{
+				DrawCharS(170 + offsetX, 320 / 2, msg[i], BLACK, BLACK, 3);
+				offsetX = offsetX + 20;
+			}
+		}
+		break;
+
+	case 4:
+		printTimeToLCD(2);
+
+		/* Send I2C message */
+		sendChangeTime();
+		changeTimeCount = 0;
+		changeTimeFlag = 0;
+
+		break;
+	}
+}
+
+/*
+ * @brief Function that sends the changed time to the RTC.
+ * @param None
+ * @return None
+ */
+void sendChangeTime(void)
+{
+	char msgHour;
+	char msgMin;
+
+	if (ampmFlag == 1)
+	{
+		msgHour = 0b1100000 | (hourArray[0] << 4) | hourArray[1];
+		I2C1_byteWrite(rtcAddress, hourM, msgHour);
+	}
+	else
+	{
+		msgHour = 0b1000000 | (hourArray[0] << 4) | hourArray[1];
+		I2C1_byteWrite(rtcAddress, hourM, msgHour);
+	}
+
+	msgMin = (minArray[0] << 4) | minArray[1];
+	I2C1_byteWrite(rtcAddress, minM, msgMin);
+}
+
+/*
+ * @brief Function that prints the time to the LCD.
+ * @param time The time to print (0 = hour, 1 = minute, 2 = AM/PM).
+ * @return None
+ */
+void printTimeToLCD(int time)
+{
+	char msg[50];
+	int offsetX = 0;
+
+	switch (time)
+	{
+	case 0:
+		sprintf(msg, "%d%d", hourArray[0], hourArray[1]);
+		for (int i = 0; i < strlen(msg); i++)
+		{
+			DrawCharS(50 + offsetX, 320 / 2, msg[i], WHITE, BLACK, 3);
+			offsetX = offsetX + 20;
+		}
+
+		break;
+
+	case 1:
+		sprintf(msg, "%d%d", minArray[0], minArray[1]);
+		for (int i = 0; i < strlen(msg); i++)
+		{
+			DrawCharS(110 + offsetX, 320 / 2, msg[i], WHITE, BLACK, 3);
+			offsetX = offsetX + 20;
+		}
+
+		break;
+
+	case 2:
+		if (ampmFlag == 1)
+		{
+			sprintf(msg, "PM");
+		}
+		else
+			sprintf(msg, "AM");
+
+		for (int i = 0; i < strlen(msg); i++)
+		{
+			DrawCharS(170 + offsetX, 320 / 2, msg[i], WHITE, BLACK, 3);
+			offsetX = offsetX + 20;
+		}
+		break;
 	}
 }

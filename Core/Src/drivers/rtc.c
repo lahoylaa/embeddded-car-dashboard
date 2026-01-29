@@ -184,3 +184,27 @@ void binaryDecimal(void)
 		ampmFlag = AM;
 	}
 }
+
+/*
+ * @brief Function that converts binary values to BCD.
+ * @param None
+ * @return None
+ */
+void decimalBinary(void)
+{
+
+	hourArray[0] = hour / 10;
+	hourArray[1] = hour % 10;
+
+	minArray[0] = min / 10;
+	minArray[1] = min % 10;
+
+	dateArray[0] = date / 10;
+	dateArray[1] = date % 10;
+
+	monthArray[0] = month / 10;
+	monthArray[1] = month % 10;
+
+	yearArray[0] = year / 10;
+	yearArray[1] = year % 10;
+}

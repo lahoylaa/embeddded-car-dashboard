@@ -15,7 +15,7 @@
 /* RTC Address */
 extern char rtcAddress;
 
-extern /* RTC Memory Address Variables */
+/* RTC Memory Address Variables */
 extern char secM;
 extern char minM;
 extern char hourM;
@@ -26,7 +26,7 @@ extern char yearM;
 extern char upperTempM;
 extern char lowerTempM;
 
-extern /* I2C Received */
+/* I2C Received */
 extern char secR;
 extern char minR;
 extern char hourR;
@@ -37,7 +37,7 @@ extern char yearR;
 extern char upperTempR;
 extern char lowerTempR;
 
-extern /* Binary Decimal Converted */
+/* Binary Decimal Converted */
 extern int sec;
 extern int min;
 extern int hour;
@@ -53,10 +53,10 @@ extern int dateArray[2];
 extern int monthArray[2];
 extern int yearArray[2];
 
-extern /* Temp Variables */
+/* Temp Variables */
 extern int rtcTempArray[2];
 
-extern /* Extra Variables */
+/* Extra Variables */
 extern char *dayS[10];
 extern int ampmFlag;
 
@@ -65,5 +65,6 @@ void readTemp(void);
 void getTime(void);
 void binaryDecimal(void);
 void getDay(void);
+void decimalBinary(void);
 
 #endif /* RTC_H_ */

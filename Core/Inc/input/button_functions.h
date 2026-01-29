@@ -11,6 +11,7 @@
 #define BUTTON_FUNCTIONS_H_
 
 #include "stm32f4xx.h"
+#include "stm32f446xx.h"
 #include "port_pin_define.h"
 
 void buttonInit(GPIO_TypeDef *Port, int Pin);

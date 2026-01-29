@@ -141,5 +141,3 @@ void sonarEcho_Init(void){
 	TIM3->CR1 = 1; 				// Enable TIM3
 
 }
-
-

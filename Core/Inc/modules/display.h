@@ -44,7 +44,8 @@ extern int chooseTemp;
 extern int resetFlag;
 extern int displayFlag;
 extern int timeCount;
-
+extern int trigger;
+extern int mileCounter;
 extern int menuScreen;
 
 /* Function Prototypes */
@@ -54,5 +55,14 @@ void displayMenu(void);
 void blinkDisplay(int n);
 void printToLCD(int menu);
 void blinkMenu(void);
+void TIM7_Init(void);
+void TIM7_IRQHandler(void);
+void changeDate(void);
+void printDateToLCD(int date);
+void sendChangeDate(void);
+void changeTime(void);
+void sendChangeTime(void);
+void decimalBinary(void);
+void printTimeToLCD(int time);
 
 #endif /* DISPLAY_H_ */

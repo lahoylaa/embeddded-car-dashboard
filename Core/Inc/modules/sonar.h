@@ -11,6 +11,8 @@
 #define SONAR_H_
 
 #include "port_pin_define.h"
+#include "stm32f4xx.h"
+#include "stm32f446xx.h"
 
 /* Definitions */
 #define SONAR_TRIG_PORT PORTA

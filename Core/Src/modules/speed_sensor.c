@@ -1,7 +1,6 @@
 /*
- * @file speed_sensor.h
- * @brief Speed Sensor module for RPM and MPH calculation using Hall Effect sensor
- * @details This module provides functions to initialize the speed sensor,
+ * @file speed_sensor.c
+ * @brief Speed sensor module for RPM and MPH calculation
  * 
  * @author: Aeron Lahoylahoy
  * @date: June 27, 2024
