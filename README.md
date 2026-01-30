@@ -2,6 +2,8 @@
 
 > **Bare-metal STM32 automotive dashboard implemented using CMSIS register-level programming.**
 
+![Embedded Car Dashboard Enclosure](Docs/photos/front-enclosure.jpeg)
+
 This project implements an embedded system that replicates an automotive dashboard using two STM32 microcontrollers communicating over I2C.  
 All peripheral configuration, interrupt handling, and communication protocols are implemented manually using register-level access — no STM32 HAL or LL drivers are used.
 
