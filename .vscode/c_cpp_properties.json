@@ -3,11 +3,14 @@
         {
             "name": "STM32",
             "includePath": [
-                "${workspaceFolder}/Core/Inc",
-                "${workspaceFolder}/Core/Src",
-                "${workspaceFolder}/Core/Startup",
+                "${workspaceFolder}/Master_Firmware/Inc/**",
+                "${workspaceFolder}/Master_Firmware/Src/**",
+                "${workspaceFolder}/Master_Firmware/Startup",
+                "${workspaceFolder}/Slave_Firmware/Inc/**",
+                "${workspaceFolder}/Slave_Firmware/Src/**",
+                "${workspaceFolder}/Slave_Firmware/Startup",
                 "${workspaceFolder}/Drivers/CMSIS/Device/ST/STM32F4xx/Include",
-                "${workspaceFolder}/Drivers/CMSIS/Include",
+                "${workspaceFolder}/Drivers/CMSIS/Include/**",
                 "${workspaceFolder}/**"
             ],
             "defines": [
